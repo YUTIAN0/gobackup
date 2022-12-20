@@ -20,4 +20,5 @@ vendor/
 log/
 .idea
 *.log
+main
 

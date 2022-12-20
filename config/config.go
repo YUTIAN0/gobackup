@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -55,6 +56,7 @@ type ModelConfig struct {
 	CompressWith SubConfig
 	EncryptWith  SubConfig
 	Archive      *viper.Viper
+	Environment  map[string]SubConfig
 	Splitter     *viper.Viper
 	Databases    map[string]SubConfig
 	Storages     map[string]SubConfig
@@ -160,6 +162,9 @@ func loadModel(key string) (model ModelConfig) {
 	loadScheduleConfig(&model)
 	loadDatabasesConfig(&model)
 	loadStoragesConfig(&model)
+	//logger.Info("loadEnvironmentConfig_pre")
+
+	loadEnvironmentConfig(&model)
 
 	if len(model.Storages) == 0 {
 		logger.Fatalf("No storage found in model %s", model.Name)
@@ -183,6 +188,33 @@ func loadScheduleConfig(model *ModelConfig) {
 		Every:   subViper.GetString("every"),
 		At:      subViper.GetString("at"),
 	}
+}
+
+func loadEnvironmentConfig(model *ModelConfig) {
+	//	logger.Info("loadEnvironmentConfig")
+
+	subViper := model.Viper.Sub("environment")
+	//	logger.Info("loadEnvironmentConfi11:")
+	model.Environment = map[string]SubConfig{}
+
+	for key := range model.Viper.GetStringMap("environment") {
+		//logger.Info("key:" + key)
+		//envViper := subViper.Sub(key)
+		//var env string = subViper.GetString(key).
+		//logger.Info(subViper.Get(key))
+		os.Setenv(strings.ToTitle(key), subViper.GetString(key)+":"+os.Getenv(strings.ToTitle(key)))
+		//logger.Info(os.Getenv(strings.ToTitle(key)))
+
+		//	logger.Info(os.Environ())
+		//modddel.Environment[key] = SubConfig{
+		//	Name: key,
+		//Type:  envViper.GetString("type"),
+		//	Viper: envViper,
+		//}
+		//logger.Info(envViper)
+
+	}
+
 }
 
 func loadDatabasesConfig(model *ModelConfig) {
@@ -214,6 +246,8 @@ func loadStoragesConfig(model *ModelConfig) {
 	subViper := model.Viper.Sub("storages")
 	for key := range model.Viper.GetStringMap("storages") {
 		storageViper := subViper.Sub(key)
+		//logger.Info(key)
+		//logger.Info(storageViper)
 		storageConfigs[key] = SubConfig{
 			Name:  key,
 			Type:  storageViper.GetString("type"),
